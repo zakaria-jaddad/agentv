@@ -1,0 +1,14 @@
+version: 1
+
+token: "secret-token"
+
+backend:
+  url: "http://127.0.0.1:4567"
+
+agent:
+  name: "production-web-01"
+
+vector:
+  binary: "opt/homebrew/bin/vector"
+  config: "/etc/myagent/vector.yaml"
+  socket: "/tmp/myagent/vector.sock"
