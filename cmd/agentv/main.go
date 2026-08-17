@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/zakaria-jaddad/agentv/internal/agentv"
 	"github.com/zakaria-jaddad/agentv/internal/config"
 )
 
-// ./agentv --token=*******
+type Manager struct {
+	Agent  *agentv.Agentv
+	Config *config.Config
+}
+
 func main() {
 
 	var confpath string
@@ -23,9 +28,11 @@ func main() {
 	if err := conf.Validate(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Backend:", conf.Backend.URL)
-	fmt.Println("Agent:", conf.Agent.Name)
-	fmt.Println("Vector:", conf.Vector.Binary)
+
+	agentv := agentv.New(conf.Agent.Name)
+	agentv.DiscoverSystemInfo()
+
+	manager := Manager{Agent: agentv, Config: conf}
 
 	// information
 	// hostname, err := os.Hostname()
