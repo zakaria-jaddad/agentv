@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,7 +29,7 @@ type data struct {
 
 type AuthResponse struct {
 	Success    bool   `json:"success"`
-	StatusCode int32  `json:"statusCode"`
+	StatusCode int    `json:"statusCode"`
 	Timestamp  string `json:"timestamp"`
 	Path       string `json:"path"`
 	Message    string `json:"message"`
@@ -39,7 +40,7 @@ type NormalizedResponse struct {
 	Data json.RawMessage `json:"data"`
 }
 
-func (c *Client) Authenticate(manager *manager.Manager) (*AuthResponse, error) {
+func (c *Client) Authenticate(manager *manager.Manager, ctx context.Context) (*AuthResponse, error) {
 
 	payload := map[string]string{
 		"hostname":     manager.Agent.Hostname,
@@ -53,9 +54,6 @@ func (c *Client) Authenticate(manager *manager.Manager) (*AuthResponse, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/api/agent/auth", bytes.NewReader(body))
 	if err != nil {
@@ -77,8 +75,54 @@ func (c *Client) Authenticate(manager *manager.Manager) (*AuthResponse, error) {
 	}
 
 	if res.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("authentication failed: server returned  %d, message: %s", res.StatusCode, authResponse.Message)
+		return nil, &AuthError{StatusCode: authResponse.StatusCode, Message: authResponse.Message}
 	}
 
 	return &authResponse, nil
+}
+
+const (
+	initialRetryDelay = 2 * time.Second
+	maxRetryDelay     = 60 * time.Second
+)
+
+func (c *Client) AuthenticateWithRetry(manager *manager.Manager, ctx context.Context) (*AuthResponse, error) {
+
+	delay := initialRetryDelay
+
+	for {
+		auth, err := c.Authenticate(manager, ctx)
+		// Authentication succeeded
+		if err == nil {
+			return auth, nil
+		}
+
+		// check if permanent authentication failure
+		var authErr *AuthError
+
+		if errors.As(err, &authErr) && authErr.Permanent() {
+			return nil, err
+		}
+
+		// Tempporary backend/network failure
+		log.Printf("backend authentication failed: %v; retrying in %s", err, delay)
+
+		timer := time.NewTimer(delay)
+
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return nil, ctx.Err()
+
+		case <-timer.C:
+		}
+
+		delay *= 2
+
+		if delay > maxRetryDelay {
+			delay = maxRetryDelay
+		}
+
+	}
+
 }

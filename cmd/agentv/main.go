@@ -1,13 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 
 	"github.com/zakaria-jaddad/agentv/internal/backend"
 	"github.com/zakaria-jaddad/agentv/internal/manager"
-	"github.com/zishang520/socket.io/clients/socket/v3"
 )
 
 func main() {
@@ -23,10 +23,11 @@ func main() {
 
 	log.Printf("Agent starting: %s on %s (%s/%s)",
 		manager.Agent.Name, manager.Agent.Hostname, manager.Agent.OS, manager.Agent.Architecture)
-	client := backend.NewClient(manager.Config.Backend.AuthEndpoint, manager.Config.Token)
+	client := backend.NewClient(manager.Config.Backend.URL, manager.Config.Token)
 
-	log.Printf("Authenticating with backend: %s", manager.Config.Backend.AuthEndpoint)
-	auth, err := client.Authenticate(manager)
+	log.Printf("Authenticating with backend: %s", manager.Config.Backend.URL)
+	ctx := context.Background()
+	auth, err := client.AuthenticateWithRetry(manager, ctx)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
@@ -36,30 +37,9 @@ func main() {
 
 	fmt.Println(auth.Data.SocketURL)
 
-	opts := socket.DefaultOptions()
-	opts.SetAuth(map[string]any{
-		"token":   manager.Config.Token,
-		"agentID": manager.Agent.ID,
-	})
-	socketClient, err := socket.Connect(auth.Data.SocketURL, opts)
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
+	client.Connect(auth.Data.SocketURL, auth.Data.AgentID)
 
-	socketClient.On("agent:authenticated", func(args ...any) {
-		if len(args) == 0 {
-			log.Println("authenticated, but no payload received")
-			return
-		}
-
-		if payload, ok := args[0].(map[string]any); ok {
-			log.Printf("Connected to backend At=%v", payload["connectedAt"])
-		} else {
-			log.Printf("authenticated: %v", args[0])
-		}
-	})
-
-	socketClient.Emit("agent:hello", "hello")
+	client.Emit("agent:hello", "hello")
 
 	select {}
 	// Next:

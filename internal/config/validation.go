@@ -9,7 +9,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("token is required, how do you want me to connect dumb ass")
 	}
 
-	if c.Backend.AuthEndpoint == "" {
+	if c.Backend.URL == "" {
 		return fmt.Errorf("backend.url is required")
 	}
 
