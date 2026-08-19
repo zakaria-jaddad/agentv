@@ -70,14 +70,14 @@ func (c *Client) Authenticate(manager *manager.Manager) (*AuthResponse, error) {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("authentication failed: server returned  %d", res.StatusCode)
-	}
-
 	var authResponse AuthResponse
 
 	if err := json.NewDecoder(res.Body).Decode(&authResponse); err != nil {
 		return nil, fmt.Errorf("decode authentication response  %w", err)
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("authentication failed: server returned  %d, message: %s", res.StatusCode, authResponse.Message)
 	}
 
 	return &authResponse, nil

@@ -9,7 +9,7 @@ type Config struct {
 }
 
 type BackendConfig struct {
-	URL string `yaml:"url"`
+	AuthEndpoint string `yaml:"url"`
 }
 
 type AgentConfig struct {

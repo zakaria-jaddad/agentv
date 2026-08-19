@@ -1,13 +1,15 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func (c *Config) Validate() error {
 	if c.Token == "" {
 		return fmt.Errorf("token is required, how do you want me to connect dumb ass")
 	}
 
-	if c.Backend.URL == "" {
+	if c.Backend.AuthEndpoint == "" {
 		return fmt.Errorf("backend.url is required")
 	}
 
