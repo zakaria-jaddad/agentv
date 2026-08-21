@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/zakaria-jaddad/agentv/internal/agentv"
 	"github.com/zakaria-jaddad/agentv/internal/backend"
+	"github.com/zakaria-jaddad/agentv/internal/config"
 	"github.com/zakaria-jaddad/agentv/internal/manager"
 )
 
@@ -16,10 +18,26 @@ func main() {
 	flag.StringVar(&confpath, "config", "/etc/agentv/agentv.yml", "Configuration file path")
 	flag.Parse()
 
-	manager, err := manager.New(confpath)
+	// Load agentv configuration
+	conf, err := config.Load(confpath)
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Fatal(err)
 	}
+
+	// Validate Configuration
+	if err := conf.Validate(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Creating Agent Object
+	agentv := agentv.New(conf.Agent.Name)
+	err = agentv.DiscoverSystemInfo()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Manager Creation
+	manager := manager.New(agentv, conf)
 
 	log.Printf("Agent starting: %s on %s (%s/%s)",
 		manager.Agent.Name, manager.Agent.Hostname, manager.Agent.OS, manager.Agent.Architecture)
@@ -38,8 +56,6 @@ func main() {
 	fmt.Println(auth.Data.SocketURL)
 
 	client.Connect(auth.Data.SocketURL, auth.Data.AgentID)
-
-	client.Emit("agent:hello", "hello")
 
 	select {}
 	// Next:
