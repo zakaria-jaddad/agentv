@@ -36,7 +36,7 @@ func (c *Client) Connect(socketURL string, agentID int64) error {
 
 	c.socket = s
 
-	c.registerSocketEvents()
+	// c.registerSocketEvents()
 
 	return nil
 }

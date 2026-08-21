@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/zakaria-jaddad/agentv/internal/manager"
+	"github.com/zakaria-jaddad/agentv/internal/agentv"
 )
 
 // export interface NormalizedResponse<T> {
@@ -40,13 +40,13 @@ type NormalizedResponse struct {
 	Data json.RawMessage `json:"data"`
 }
 
-func (c *Client) Authenticate(manager *manager.Manager, ctx context.Context) (*AuthResponse, error) {
+func (c *Client) Authenticate(agentv *agentv.Agentv, ctx context.Context) (*AuthResponse, error) {
 
 	payload := map[string]string{
-		"hostname":     manager.Agent.Hostname,
-		"platform":     manager.Agent.OS,
-		"architecture": manager.Agent.Architecture,
-		"name":         manager.Agent.Name,
+		"hostname":     agentv.Hostname,
+		"platform":     agentv.OS,
+		"architecture": agentv.Architecture,
+		"name":         agentv.Name,
 		"token":        c.installationToken,
 	}
 
@@ -86,12 +86,12 @@ const (
 	maxRetryDelay     = 60 * time.Second
 )
 
-func (c *Client) AuthenticateWithRetry(manager *manager.Manager, ctx context.Context) (*AuthResponse, error) {
+func (c *Client) AuthenticateWithRetry(agentv *agentv.Agentv, ctx context.Context) (*AuthResponse, error) {
 
 	delay := initialRetryDelay
 
 	for {
-		auth, err := c.Authenticate(manager, ctx)
+		auth, err := c.Authenticate(agentv, ctx)
 		// Authentication succeeded
 		if err == nil {
 			return auth, nil
