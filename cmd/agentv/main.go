@@ -79,8 +79,22 @@ func main() {
 	// Creating The manager
 	manager := manager.New(agentv, conf, backendClient, bridgeServer)
 
+	// The whole purpose of this go routine just go
+	// the data provided from the channel would be sent to the backend
+	go func(ctx context.Context) {
+		manager.Run(ctx)
+	}(ctx)
+
+	// Vector lifecycle: validate config then run Vector in the foreground
+	if err := manager.Vector.ValidateConfig(); err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	if err := manager.Vector.Start(ctx); err != nil {
+		log.Fatalf("%v", err)
+	}
+
 	select {}
 	// Next:
-	// 2. Start Vector
 	// 3. Start heartbeat
 }

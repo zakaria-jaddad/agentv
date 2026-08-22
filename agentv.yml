@@ -1,14 +1,14 @@
 version: 1
 
-token: "secret-token"
+token: "$argon2id$v=19$m=65536,p=4,t=3$UToQkeb0nsKsPcIteGyBoQ$R4bk+pbhjdDSmX97zDtvmxxITDmYaFjwQMuGa+pwOfY"
 
 backend:
   url: "http://127.0.0.1:4567"
 
 agent:
-  name: "production-web-01"
+  name: "agentbastita"
 
 vector:
-  binary: "opt/homebrew/bin/vector"
-  config: "/etc/myagent/vector.yaml"
-  socket: "/tmp/myagent/vector.sock"
+  binary: "/opt/homebrew/bin/vector"
+  config: "/Users/zakariajaddad/Projects/agentv/vector.yml"
+  socket: "/tmp/agentv/vector.sock"

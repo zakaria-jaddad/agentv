@@ -1,0 +1,61 @@
+data_dir: "/Users/zakariajaddad/Projects/agentv/vector"
+
+# ==============================================================================
+# SOURCES
+# ==============================================================================
+sources:
+  nginx_access:
+    type: "file"
+    include:
+      - "/opt/homebrew/var/log/nginx/access.log"
+    read_from: "beginning"
+
+  nginx_error:
+    type: "file"
+    include:
+      - "/opt/homebrew/var/log/nginx/error.log"
+    read_from: "beginning"
+
+# ==============================================================================
+# TRANSFORMS
+# ==============================================================================
+transforms:
+  parse_access_logs:
+    type: "remap"
+    inputs:
+      - "nginx_access"
+    source: |
+      structured, err = parse_nginx_log(.message, "combined")
+      if err != null {
+        log("Failed to parse Nginx access log: " + err, level: "warn")
+      } else {
+        . = merge(., structured)
+        .log_type = "access"
+        del(.file)
+      }
+
+  parse_error_logs:
+    type: "remap"
+    inputs:
+      - "nginx_error"
+    source: |
+      parsed, err = parse_regex(.message, r'^(?P<timestamp>\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}) \[(?P<severity>\w+)\] (?P<pid>\d+)#(?P<tid>\d+): \*(?P<connection_id>\d+) (?P<error_message>.*)$')
+      if err == null {
+        . = merge(., parsed)
+        .log_type = "error"
+        del(.file)
+      }
+
+# ==============================================================================
+# SINKS (Unix Domain Socket)
+# ==============================================================================
+sinks:
+  unix_socket_sink:
+    type: "socket"
+    inputs:
+      - "parse_access_logs"
+      - "parse_error_logs"
+    mode: "unix"
+    path: "/tmp/agentv/vector.sock"
+    encoding:
+      codec: "json"
