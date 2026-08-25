@@ -23,7 +23,7 @@ import (
 // }
 
 type data struct {
-	AgentID   int64  `json:"agentID"`
+	AgentID   int    `json:"agentID"`
 	SocketURL string `json:"socketUrl"`
 }
 

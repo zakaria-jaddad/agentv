@@ -35,7 +35,7 @@ const (
 )
 
 type Agentv struct {
-	ID           int64
+	ID           int
 	Name         string
 	Hostname     string
 	OS           string

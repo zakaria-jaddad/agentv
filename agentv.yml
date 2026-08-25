@@ -11,4 +11,4 @@ agent:
 vector:
   binary: "/opt/homebrew/bin/vector"
   config: "/Users/zakariajaddad/Projects/agentv/vector.yml"
-  socket: "/tmp/agentv/vector.sock"
+  socket: "/tmp/agentv/"

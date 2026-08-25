@@ -4,25 +4,14 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/zakaria-jaddad/agentv/internal/bridge"
 	"github.com/zishang520/socket.io/clients/socket/v3"
+	"github.com/zishang520/socket.io/v3/pkg/types"
 )
 
-func (c *Client) registerSocketEvents() {
-	c.socket.On("agent:authenticated", func(args ...any) {
-		if len(args) == 0 {
-			log.Println("authenticated, but no payload received")
-			return
-		}
+type EventHandler func() error
 
-		if payload, ok := args[0].(map[string]any); ok {
-			log.Printf("Connected to backend At=%v", payload["connectedAt"])
-		} else {
-			log.Printf("authenticated: %v", args[0])
-		}
-	})
-}
-
-func (c *Client) Connect(socketURL string, agentID int64) error {
+func (c *Client) Connect(socketURL string, agentID int) error {
 
 	opts := socket.DefaultOptions()
 	opts.SetAuth(map[string]any{
@@ -36,9 +25,21 @@ func (c *Client) Connect(socketURL string, agentID int64) error {
 
 	c.socket = s
 
-	// c.registerSocketEvents()
-
 	return nil
+}
+
+func (c *Client) RegisterEvent(event bridge.Event, eventHandler EventHandler) {
+
+	c.socket.On(types.EventName(event), func(args ...any) {
+		if eventHandler == nil {
+			log.Printf("%s function not set, cannot handle %s", event, event)
+			return
+		}
+
+		if err := eventHandler(); err != nil {
+			log.Printf("failed to %s vector: %v", event, err)
+		}
+	})
 }
 
 func (c *Client) Emit(event string, args ...any) error {
@@ -47,4 +48,10 @@ func (c *Client) Emit(event string, args ...any) error {
 	}
 
 	return c.socket.Emit(event, args)
+}
+
+func (c *Client) Disconnect() {
+	if c.socket != nil {
+		c.socket.Disconnect()
+	}
 }
