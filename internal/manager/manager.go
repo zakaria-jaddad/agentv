@@ -2,7 +2,6 @@ package manager
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -62,7 +61,7 @@ func (m *Manager) Start(ctx context.Context) error {
 	m.Vector.OnStatusChange(func(status agentv.VectorStatus) {
 		log.Printf("Vector status changed to: %v", status)
 		// Send status update to backend
-		m.BackendClient.SendStatusUpdate(m.Agent.ID, status)
+		m.BackendClient.SendStatusUpdate(status)
 	})
 
 	// Start Vector in background
@@ -74,8 +73,8 @@ func (m *Manager) Start(ctx context.Context) error {
 	// Add(delta int): Increments the internal counter by a specified amount, typically called before launching a new goroutine.
 	// Done(): Decrements the counter by one, usually deferred at the start of a worker goroutine to signal completion.
 	// Wait(): Blocks the calling goroutine until the internal counter reaches zero, ensuring all tracked tasks have completed.
-	m.wg.Add(1)
-	go m.runBackgroundTask(m.ctx)
+	// m.wg.Add(1)
+	// go m.runBackgroundTask(m.ctx)
 
 	m.wg.Add(1)
 	go func() {
@@ -92,7 +91,6 @@ func (m *Manager) Start(ctx context.Context) error {
 		for {
 			select {
 			case <-m.ctx.Done():
-				fmt.Println("heartbeat go routine is done stopping")
 				return
 			case <-ticker.C:
 				// heart beat
@@ -105,28 +103,25 @@ func (m *Manager) Start(ctx context.Context) error {
 }
 
 // a go routine for background health check
-func (m *Manager) runBackgroundTask(ctx context.Context) {
-	defer m.wg.Done()
-
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			fmt.Println("vector health check go routine is done stopping")
-			return
-		case <-ticker.C:
-			// health check
-			if m.Vector.IsRunning() == false {
-				log.Println("Vector not running, attempting restart...")
-				if err := m.Vector.Restart(ctx); err != nil {
-					log.Printf("Failed to restart vector: %v", err)
-				}
-			}
-		}
-	}
-}
+// NOTE: Should i keep this
+// func (m *Manager) runBackgroundTask(ctx context.Context) {
+// 	defer m.wg.Done()
+// 	ticker := time.NewTicker(30 * time.Second)
+// 	defer ticker.Stop()
+// 	for {
+// 		select {
+// 		case <-ctx.Done():
+// 			return
+// 		case <-ticker.C:
+// 			// health check
+// 			if m.Vector.IsRunning() == false {
+// 				// log.Println("Vector not running, attempting restart...")
+// 				// if err := m.Vector.Restart(ctx); err != nil {
+// 				// 	log.Printf("Failed to restart vector: %v", err)
+// 			}
+// 		}
+// 	}
+// }
 
 // Restart restarts Vector
 func (m *Manager) RestartVector() error {

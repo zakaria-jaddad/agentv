@@ -7,9 +7,8 @@ type EventData []byte
 type Event types.EventName
 
 const (
-	VectorStatus   Event = "vector:ststus"   // Send
+	VectorStatus   Event = "subagent:status" // Send
 	AgentHeartBeat Event = "agent:heartbeat" // Send
-	AgentStatus    Event = "agent:status"    // Send
 	AgentData      Event = "agent:data"      // Send
 	VectorStart    Event = "vector:start"    // Get -> Send
 	VectorStop     Event = "vector:stop"     // Get -> Send
