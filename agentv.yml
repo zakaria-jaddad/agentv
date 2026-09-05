@@ -3,12 +3,12 @@ version: 1
 token: "$argon2id$v=19$m=65536,p=4,t=3$UToQkeb0nsKsPcIteGyBoQ$R4bk+pbhjdDSmX97zDtvmxxITDmYaFjwQMuGa+pwOfY"
 
 backend:
-  url: "http://127.0.0.1:4567"
+  url: "http://192.168.1.18:4567"
 
 agent:
   name: "agentbastita"
 
 vector:
-  binary: "/opt/homebrew/bin/vector"
-  config: "/Users/zakariajaddad/Projects/agentv/vector.yml"
+  binary: "/usr/local/bin/vector"
+  config: "/agentv/vector.yml"
   socket: "/tmp/agentv/"
