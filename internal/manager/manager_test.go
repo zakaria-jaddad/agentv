@@ -41,7 +41,7 @@ func TestManagerStopGraceful(t *testing.T) {
 	// Start manager background goroutines manually or via Start
 	mgr.ctx, mgr.cancel = context.WithCancel(ctx)
 	mgr.wg.Add(1)
-	go mgr.runBackgroundTask(mgr.ctx)
+	// go mgr.runBackgroundTask(mgr.ctx)
 
 	mgr.wg.Add(1)
 	go func() {

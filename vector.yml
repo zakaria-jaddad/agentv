@@ -7,13 +7,13 @@ sources:
   nginx_access:
     type: "file"
     include:
-      - "/opt/homebrew/var/log/nginx/access.log"
+      - "/var/log/nginx/access.log"
     read_from: "beginning"
 
   nginx_error:
     type: "file"
     include:
-      - "/opt/homebrew/var/log/nginx/error.log"
+      - "/var/log/nginx/error.log"
     read_from: "beginning"
 
 # ==============================================================================

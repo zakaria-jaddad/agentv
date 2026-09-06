@@ -1,8 +1,8 @@
 package config
 
 type Config struct {
-	Version int           `yaml:"version"`
-	Token   string        `yaml:"token"`
+	Version int `yaml:"version"`
+	Token   string
 	Backend BackendConfig `yaml:"backend"`
 	Agent   AgentConfig   `yaml:"agent"`
 	Vector  VectorConfig  `yaml:"vector"`

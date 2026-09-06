@@ -15,10 +15,13 @@ import (
 	"github.com/zakaria-jaddad/agentv/internal/manager"
 )
 
+// how am it supposed to run multiple instances of the same code with different information
+// the same code but different env variables
 func main() {
-
+	// TODO: Check if the dir already exist
 	os.MkdirAll("/tmp/agentv", 0750)
-	log.Println(os.Getegid())
+
+	log.Println("Process id: ", os.Getegid())
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

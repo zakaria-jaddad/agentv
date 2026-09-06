@@ -11,4 +11,6 @@ RUN curl --proto '=https' --tlsv1.2 -sSfL https://sh.vector.dev | bash -s -- -y 
 
 COPY . /agentv
 
+# Add go mode to dockerfile
+
 CMD ["nginx", "-g", "daemon off;"]
