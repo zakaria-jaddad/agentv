@@ -29,7 +29,12 @@ go.work.sum
 
 # Vector data dir
 /vector/
+.agents
+AGENTS.md
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+
+
+agent.env

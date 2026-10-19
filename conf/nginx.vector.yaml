@@ -1,0 +1,226 @@
+data_dir: "/tmp/agentv"
+
+# SOURCES
+sources:
+  nginx_container_logs:
+    type: "docker_logs"
+    include_containers:
+      - "nginx"
+
+  nginx_daemon_access_logs:
+    type: "file"
+    include:
+      - "/opt/homebrew/var/log/nginx/access.log"
+
+  nginx_daemon_error_logs:
+    type: "file"
+    include:
+      - "/opt/homebrew/var/log/nginx/error.log"
+
+transforms:
+  tag_daemon_access:
+    type: remap
+    inputs: ["nginx_daemon_access_logs"]
+    source: |
+      .stream = "stdout"
+      .source_type = "file"
+
+  tag_daemon_error:
+    type: remap
+    inputs: ["nginx_daemon_error_logs"]
+    source: |
+      .stream = "stderr"
+      .source_type = "file"
+
+  normalize_nginx_metadata:
+    type: remap
+    inputs:
+      - "nginx_container_logs"
+      - "tag_daemon_access"
+      - "tag_daemon_error"
+    source: |
+      del(.label)
+
+      if exists(.container_id) {
+        .container = {
+          "id": .container_id,
+          "name": .container_name,
+          "image": .image,
+          "created_at": .container_created_at
+        }
+        del(.container_id)
+        del(.container_name)
+        del(.image)
+        del(.container_created_at)
+        .source = {
+          "type": "docker",
+          "service": "nginx",
+          "stream": .stream
+        }
+      } else {
+        .container = null
+        .source = {
+          "type": "file",
+          "service": "nginx",
+          "stream": .file
+        }
+      }
+      del(.source_type)
+
+  route_nginx_logs:
+    type: exclusive_route
+    inputs:
+      - "normalize_nginx_metadata"
+    routes:
+      - name: access_logs
+        condition: '.stream == "stdout"'
+      - name: error_logs
+        condition: '.stream == "stderr"'
+
+  parse_access_logs:
+    type: remap
+    inputs: ["route_nginx_logs.access_logs"]
+    source: |
+      parsed, err = parse_nginx_log(.message, "combined")
+      if err != null {
+        log("Failed to parse nginx access log: " + err, level: "warn")
+        abort
+      }
+
+      . = merge(., parsed)
+
+      # Host metadata
+      .host = {
+        "ip": .host
+      }
+
+      # HTTP metadata
+      status = to_int(.status)
+      size = to_int(.size)
+
+      req, req_err = parse_regex(.request, r'^(?P<method>\w+)\s+(?P<path>\S+)\s+(?P<protocol>\S+)')
+      if req_err != null {
+        req = null
+      }
+
+      .http = {
+        "client": {
+          "ip": .client
+        },
+        "request": req,
+        "response": {
+          "status": status,
+          "size": size
+        },
+        "referer": .referer,
+        "agent": .agent
+      }
+      del(.client)
+      del(.status)
+      del(.size)
+      del(.referer)
+      del(.request)
+      del(.agent)
+
+      # Event classification
+      .success = status >= 200 && status < 300
+
+      if status >= 500 {
+        .event = {
+          "type": "server error",
+          "category": "system",
+          "message": .message
+        }
+      } else if status >= 400 {
+        .event = {
+          "type": "client error",
+          "category": "security",
+          "message": .message
+        }
+      } else {
+        .event = {
+          "type": "access",
+          "category": "web",
+          "message": .message
+        }
+      }
+      del(.message)
+      del(.eventType)
+
+  parse_error_logs:
+    type: remap
+    inputs: ["route_nginx_logs.error_logs"]
+    source: |
+      parsed, err = parse_nginx_log(.message, "error")
+      if err != null {
+        log("Failed to parse nginx error log: " + err, level: "warn")
+        abort
+      }
+
+      . = merge(., parsed)
+
+      # Host metadata
+      .host = {
+        "ip": .host
+      }
+
+      # HTTP metadata
+      status, status_err = to_int(.status)
+      if status_err != null {
+        status = 0
+      }
+
+      size, size_err = to_int(.size)
+      if size_err != null {
+        size = 0
+      }
+
+      req, req_err = parse_regex(.request, r'^(?P<method>\w+)\s+(?P<path>\S+)\s+(?P<protocol>\S+)')
+      if req_err != null {
+        req = null
+      }
+
+      .http = {
+        "client": {
+          "ip": .client
+        },
+        "request": req,
+        "response": {
+          "status": status,
+          "size": size
+        },
+        "referer": .referer,
+        "agent": .agent
+      }
+      del(.client)
+      del(.status)
+      del(.size)
+      del(.referer)
+      del(.request)
+      del(.agent)
+
+      # Event classification
+      .success = false
+      .event = {
+        "type": "server error",
+        "category": "system",
+        "message": .message
+      }
+      del(.message)
+      del(.stream)
+      del(.eventType)
+      del(.cid)
+      del(.pid)
+      del(.tid)
+      del(.severity)
+
+sinks:
+  unix_socket_sink:
+    inputs:
+      - "parse_access_logs"
+      - "parse_error_logs"
+    type: "socket"
+    mode: "unix"
+    path: "/tmp/agentv/agentv.sock"
+    encoding:
+      codec: "json"

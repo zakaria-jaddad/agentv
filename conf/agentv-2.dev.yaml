@@ -1,0 +1,12 @@
+version: 1
+
+backend:
+  url: "http://127.0.0.1:4567"
+
+agent:
+  name: "agentbastita"
+
+vector:
+  binary: "/opt/homebrew/bin/vector"
+
+  config: "/Users/zakariajaddad/Projects/assas/agentv/vector-2.dev.yaml"
