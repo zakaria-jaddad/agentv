@@ -19,7 +19,7 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("parse config file: %w", err)
 	}
 
-	// get token fom env
+	// get token from env
 	conf.Token = os.Getenv("AGENT_TOKEN")
 
 	return &conf, nil

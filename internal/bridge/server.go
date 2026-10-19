@@ -33,7 +33,7 @@ type Server struct {
 
 func NewServer(path string) *Server {
 	return &Server{
-		path:  path + "vector.sock",
+		path:  path,
 		event: make(chan EventData, EVENT_MAX),
 	}
 }

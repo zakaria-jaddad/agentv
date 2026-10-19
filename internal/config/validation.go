@@ -17,13 +17,5 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("vector.binary is required")
 	}
 
-	if c.Vector.Config == "" {
-		return fmt.Errorf("vector.config is required")
-	}
-
-	if c.Vector.Socket == "" {
-		return fmt.Errorf("vector.socket is required")
-	}
-
 	return nil
 }

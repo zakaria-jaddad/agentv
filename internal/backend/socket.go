@@ -11,6 +11,7 @@ import (
 
 type EventHandler func() error
 
+// BUG: Fix Socket connection failiuer
 func (c *Client) Connect(socketURL string, agentID int) error {
 
 	opts := socket.DefaultOptions()

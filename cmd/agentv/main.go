@@ -15,12 +15,18 @@ import (
 	"github.com/zakaria-jaddad/agentv/internal/manager"
 )
 
-// how am it supposed to run multiple instances of the same code with different information
-// the same code but different env variables
-func main() {
-	// TODO: Check if the dir already exist
-	os.MkdirAll("/tmp/agentv", 0750)
+func isDirectoryExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil // Path does not exist
+		}
+		return false, err // Other error occurred
+	}
+	return info.IsDir(), nil // Returns true if it is a directory
+}
 
+func main() {
 	log.Println("Process id: ", os.Getegid())
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -47,6 +53,19 @@ func main() {
 		log.Fatal(err)
 	}
 
+	vectorDataExists, err := isDirectoryExists(config.AgentvDir)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	if !vectorDataExists {
+		// Create vector data directory
+		if err := os.MkdirAll(config.AgentvDir, 0755); err != nil {
+			log.Fatalf("could not create %s: %v", config.AgentvDir, err)
+		}
+	}
+	conf.Socket = config.AgentvSocketPath
+
+	// TODO: Get config from the  Authentication Response
 	log.Printf("Agent starting: %s on %s (%s/%s)",
 		agentv.Name, agentv.Hostname, agentv.OS, agentv.Architecture)
 	backendClient := backend.NewClient(conf.Backend.URL, conf.Token)
@@ -66,14 +85,14 @@ func main() {
 	}
 	log.Printf("Successfully Connected To Backend Cia WebSocket: %s\n", auth.Data.SocketURL)
 
-	log.Printf("Creating A Unix Socket: %s\n", conf.Vector.Socket)
-	bridgeServer := bridge.NewServer(conf.Vector.Socket)
+	log.Printf("Creating A Unix Socket: %s\n", conf.Socket)
+	bridgeServer := bridge.NewServer(conf.Socket)
 
-	log.Printf("Starting A Unix Socket: %s\n", conf.Vector.Socket)
+	log.Printf("Starting A Unix Socket: %s\n", conf.Socket)
 	if err := bridgeServer.Start(ctx); err != nil {
 		log.Fatalf("%v", err)
 	}
-	log.Printf("Unix Socket Listening On: %s\n", conf.Vector.Socket)
+	log.Printf("Unix Socket Listening On: %s\n", conf.Socket)
 
 	manager := manager.New(agentv, conf, backendClient, bridgeServer)
 
