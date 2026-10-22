@@ -87,7 +87,9 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 
 	// set exact permission to socket
-	os.Chmod(s.path, 0660)
+	if err := os.Chmod(s.path, 0660); err != nil {
+		return fmt.Errorf("chmod unix socket: %w", err)
+	}
 
 	s.listener = listener
 

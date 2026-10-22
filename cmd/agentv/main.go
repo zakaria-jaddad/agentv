@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"github.com/zakaria-jaddad/agentv/internal/agentv"
@@ -14,17 +15,6 @@ import (
 	"github.com/zakaria-jaddad/agentv/internal/config"
 	"github.com/zakaria-jaddad/agentv/internal/manager"
 )
-
-func isDirectoryExists(path string) (bool, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil // Path does not exist
-		}
-		return false, err // Other error occurred
-	}
-	return info.IsDir(), nil // Returns true if it is a directory
-}
 
 func main() {
 	log.Println("Process id: ", os.Getegid())
@@ -53,17 +43,38 @@ func main() {
 		log.Fatal(err)
 	}
 
-	vectorDataExists, err := isDirectoryExists(config.AgentvDir)
+	// Create runtime directory for the socket file
+	runtimeDir, err := config.RuntimeDir()
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatal(err)
 	}
-	if !vectorDataExists {
-		// Create vector data directory
-		if err := os.MkdirAll(config.AgentvDir, 0755); err != nil {
-			log.Fatalf("could not create %s: %v", config.AgentvDir, err)
-		}
+	if err := os.MkdirAll(runtimeDir, 0700); err != nil {
+		log.Fatalf("create runtime directory: %v", err)
 	}
-	conf.Socket = config.AgentvSocketPath
+
+	stateDir, err := config.StateDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := os.MkdirAll(stateDir, 0700); err != nil {
+		log.Fatalf("create state directory: %v", err)
+	}
+
+	conf.Socket = filepath.Join(runtimeDir, "agentv.sock")
+	log.Printf("AgentV socket: %s", conf.Socket)
+
+	// Generate a Vector config with the same socket path.
+	generatedConfig, err := conf.PrepareVectorConfig(
+		conf.Vector.Config,
+		runtimeDir,
+		stateDir,
+		conf.Socket,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	conf.Vector.Config = generatedConfig
+	log.Printf("Vector generated config: %s", conf.Vector.Config)
 
 	// TODO: Get config from the  Authentication Response
 	log.Printf("Agent starting: %s on %s (%s/%s)",

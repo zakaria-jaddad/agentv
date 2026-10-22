@@ -1,4 +1,4 @@
-data_dir: "/tmp/agentv"
+data_dir: "${VECTOR_STATE_DIR}"
 
 # SOURCES
 sources:
@@ -215,12 +215,12 @@ transforms:
       del(.severity)
 
 sinks:
-  unix_socket_sink:
+  agentv:
     inputs:
       - "parse_access_logs"
       - "parse_error_logs"
     type: "socket"
     mode: "unix"
-    path: "/tmp/agentv/agentv.sock"
+    path: "${AGENTV_SOCKET_PATH}"
     encoding:
       codec: "json"
