@@ -43,12 +43,14 @@ func (c *Client) RegisterEvent(event bridge.Event, eventHandler EventHandler) {
 	})
 }
 
+// Emit sends an event to the backend server with the provided arguments.
+// If the socket connection is disconnected the event get buffered for later
 func (c *Client) Emit(event string, args ...any) error {
 	if c.socket == nil {
-		return fmt.Errorf("backend socket is not connected")
+		return fmt.Errorf("backend socket is not initialized")
 	}
-
-	return c.socket.Emit(event, args)
+	log.Printf("Emitting event: %s with args: %v", event, args)
+	return c.socket.Emit(event, args...)
 }
 
 func (c *Client) Disconnect() {

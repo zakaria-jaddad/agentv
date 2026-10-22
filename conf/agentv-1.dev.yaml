@@ -8,5 +8,4 @@ agent:
 
 vector:
   binary: "/opt/homebrew/bin/vector"
-
-  config: "/Users/zakariajaddad/Projects/assas/agentv/nginx.vector.yaml"
+  config: "/Users/zakariajaddad/Projects/assas/agentv/conf/nginx.vector.yaml"

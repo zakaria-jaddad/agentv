@@ -33,7 +33,7 @@ type AuthResponse struct {
 	Timestamp  string `json:"timestamp"`
 	Path       string `json:"path"`
 	Message    string `json:"message"`
-	Data       data   `json:data`
+	Data       data   `json:"data"`
 }
 
 type NormalizedResponse struct {
