@@ -52,19 +52,19 @@ func (c *Client) Authenticate(agentv *agentv.Agentv, ctx context.Context) (*Auth
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("marshal authentication payload: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/api/agent/auth", bytes.NewReader(body))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create authentication request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("authenticate with backend: %w", err)
 	}
 	defer res.Body.Close()
 
@@ -75,7 +75,7 @@ func (c *Client) Authenticate(agentv *agentv.Agentv, ctx context.Context) (*Auth
 	}
 
 	if res.StatusCode != http.StatusCreated {
-		return nil, &AuthError{StatusCode: authResponse.StatusCode, Message: authResponse.Message}
+		return nil, &AuthError{StatusCode: res.StatusCode, Message: authResponse.Message}
 	}
 
 	return &authResponse, nil

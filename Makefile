@@ -1,4 +1,4 @@
-NAME1		= agentv-1
+NAME1		= agentv
 SRC			= ./cmd/agentv
 
 .PHONY: all clean fclean re

@@ -56,9 +56,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := os.MkdirAll(stateDir, 0700); err != nil {
-		log.Fatalf("create state directory: %v", err)
-	}
 
 	conf.Socket = filepath.Join(runtimeDir, "agentv.sock")
 	log.Printf("AgentV socket: %s", conf.Socket)
