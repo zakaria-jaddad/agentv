@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -9,9 +10,10 @@ import (
 	"github.com/zishang520/socket.io/v3/pkg/types"
 )
 
+var ErrBackendUnavailable = errors.New("backend socket is unavailable")
+
 type EventHandler func() error
 
-// BUG: Fix Socket connection failiuer
 func (c *Client) Connect(socketURL string, agentID int) error {
 
 	opts := socket.DefaultOptions()
@@ -43,11 +45,11 @@ func (c *Client) RegisterEvent(event bridge.Event, eventHandler EventHandler) {
 	})
 }
 
-// Emit sends an event to the backend server with the provided arguments.
-// If the socket connection is disconnected the event get buffered for later
 func (c *Client) Emit(event string, args ...any) error {
-	if c.socket == nil {
-		return fmt.Errorf("backend socket is not initialized")
+	socket := c.socket
+
+	if socket == nil || !socket.Connected() || !isSocketWritable(socket) {
+		return ErrBackendUnavailable
 	}
 	log.Printf("Emitting event: %s with args: %v", event, args)
 	return c.socket.Emit(event, args...)
@@ -57,4 +59,21 @@ func (c *Client) Disconnect() {
 	if c.socket != nil {
 		c.socket.Disconnect()
 	}
+}
+
+// isSocketWritable checks if the socket is writable.
+// Socket io  has several layers
+// isSocketWritable checks if the socket is writable by checking if the socket is connected and if the underlying transport is writable.
+// A namespace socket can report that it is connected when the undrelying transport hat become unwritable or the connection is in the process of failing
+func isSocketWritable(socket *socket.Socket) bool {
+
+	engine := socket.Io().Engine()
+	if engine == nil || engine.Transport() == nil {
+		return false
+	}
+
+	// HasPingExpired() checks if the current ping timeout has expired
+	// Writable() returns whether the transport can currently send data
+	return !engine.HasPingExpired() && engine.Transport().Writable()
+
 }

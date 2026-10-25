@@ -17,7 +17,7 @@ read Vector events
 deliver events to Agent
 */
 
-var EVENT_MAX = 20_000
+var EVENT_QUEUE_SIZE = 20_000
 
 type Server struct {
 	path string
@@ -34,7 +34,7 @@ type Server struct {
 func NewServer(path string) *Server {
 	return &Server{
 		path:  path,
-		event: make(chan EventData, EVENT_MAX),
+		event: make(chan EventData, EVENT_QUEUE_SIZE),
 	}
 }
 

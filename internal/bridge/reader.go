@@ -18,7 +18,6 @@ func (s *Server) handleConnection(ctx context.Context, conn net.Conn) {
 
 	log.Printf("Vector connected to unix socket")
 
-	// Close conn when ctx is cancelled to unblock any blocking ReadBytes
 	stop := make(chan struct{})
 	defer close(stop)
 	go func() {
@@ -55,4 +54,3 @@ func (s *Server) handleConnection(ctx context.Context, conn net.Conn) {
 func (s *Server) Close() error {
 	return s.Stop()
 }
-
