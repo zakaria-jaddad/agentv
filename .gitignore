@@ -26,6 +26,7 @@ go.work.sum
 
 # env file
 .env
+agentv.env
 
 # Vector data dir
 /vector/
